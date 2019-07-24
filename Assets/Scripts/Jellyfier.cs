@@ -4,15 +4,21 @@ using UnityEngine;
 
 public class Jellyfier : MonoBehaviour
 {
-    public float bounceSpeed;
-    public float fallForce;
-    public float stiffness;
+    public float bounceSpeed = 400f;
+    public float fallForce = 0.03f;
+    public float stiffness = 40f;
+    public float maxSpeed = 10f;
+    public float bounceForce = 100f;
+    public bool useBounce = true;
 
     private MeshFilter meshFilter;
     private Mesh mesh;
 
     JellyVertex[] jellyVertices;
     Vector3[] currentMeshVertices;
+    Rigidbody rigid;
+    Vector3 vel;    // 记录每帧的速度，用中间值来模拟真实速度（也不太准就是了），这样碰撞的时候至少会好一些
+    Vector3 lastV;  // 上一帧的速度
 
 
     // Start is called before the first frame update
@@ -22,12 +28,16 @@ public class Jellyfier : MonoBehaviour
         mesh = meshFilter.mesh;
 
         GetVertices();
+
+        rigid = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
     void Update()
     {
         UpdateVertices();
+        SpeedControll();
+        
     }
 
     private void GetVertices()
@@ -60,12 +70,22 @@ public class Jellyfier : MonoBehaviour
 
     public void OnCollisionEnter(Collision collision)
     {
+        if (useBounce)
+        {
+            Bounce();
+        }
         ContactPoint[] collisionPoints = collision.contacts;
         for (int i = 0; i < collisionPoints.Length; i++)
         {
             Vector3 inputPoint = collisionPoints[i].point + (collisionPoints[i].point * .1f);
-            ApplyPressureToPoint(inputPoint, fallForce);
+            ApplyPressureToPoint(inputPoint, vel.magnitude * fallForce);
+            //Debug.Log(vel.magnitude);
         }
+    }
+
+    private void Bounce()
+    {
+        rigid.AddForce(vel * -1 * bounceSpeed);
     }
 
     public void ApplyPressureToPoint(Vector3 _point, float _pressure)
@@ -74,6 +94,20 @@ public class Jellyfier : MonoBehaviour
         {
             jellyVertices[i].ApplyPressureToVertex(transform, _point, _pressure);
         }
+    }
+
+    private void SpeedControll()
+    {
+        Vector3 v = rigid.velocity;
+        if (v.magnitude > maxSpeed)
+        {
+            Vector3 normalV = v.normalized;
+            v = normalV * maxSpeed;
+            rigid.velocity = v;
+        }
+
+        vel = (lastV + v) / 2;
+        lastV = v;
     }
 }
 
