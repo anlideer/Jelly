@@ -373,6 +373,9 @@ MonoBehaviour:
   bounceSpeed: 400
   fallForce: 0.03
   stiffness: 40
+  maxSpeed: 10
+  bounceForce: 100
+  useBounce: 1
 --- !u!65 &1202323781
 BoxCollider:
   m_ObjectHideFlags: 0
